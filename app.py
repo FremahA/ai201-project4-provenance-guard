@@ -159,14 +159,70 @@ def compute_stylometric_score(text):
 
 
 # ---------------------------------------------------------------------------
+# Signal 3: Punctuation & Complexity Score
+# ---------------------------------------------------------------------------
+def compute_punctuation_score(text):
+    """
+    Measures two additional structural properties:
+    1. Punctuation density — punctuation marks per word.
+       AI text uses punctuation conservatively and uniformly.
+       Low density → higher AI score.
+    2. Average sentence complexity — conjunctions + commas per sentence.
+       AI text tends toward consistent multi-clause sentences.
+       Very high or very uniform complexity → higher AI score.
+
+    Returns a float 0.0–1.0 where 1.0 = more likely AI.
+    """
+    words = re.findall(r'\b\w+\b', text)
+    if not words:
+        return 0.5
+
+    # --- Metric 1: Punctuation density ---
+    punct_marks = re.findall(r'[!?,;:\-\—\…\(\)\"\']', text)
+    density = len(punct_marks) / len(words)
+    # Human writing: density typically 0.08–0.25+
+    # AI writing: density typically 0.03–0.10
+    # Low density → high AI score
+    # Normalize: density 0.03 → score 1.0, density 0.20+ → score 0.0
+    density_score = max(0.0, min(1.0, (0.20 - density) / 0.17))
+
+    # --- Metric 2: Sentence complexity variance ---
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    if len(sentences) < 2:
+        complexity_score = 0.5
+    else:
+        # Complexity = commas + conjunctions per sentence
+        conjunctions = {'and', 'but', 'or', 'so', 'yet', 'because', 'although',
+                        'while', 'however', 'therefore', 'furthermore', 'moreover'}
+        def sentence_complexity(s):
+            commas = s.count(',')
+            words_in_s = set(re.findall(r'\b\w+\b', s.lower()))
+            conj_count = len(words_in_s & conjunctions)
+            return commas + conj_count
+
+        complexities = [sentence_complexity(s) for s in sentences]
+        mean_c = sum(complexities) / len(complexities)
+        variance_c = sum((c - mean_c) ** 2 for c in complexities) / len(complexities)
+        std_c = math.sqrt(variance_c)
+        # Low variance in complexity = AI-like (consistent sentence structure)
+        # High variance = more human
+        clamped_c = max(0.0, min(5.0, std_c))
+        complexity_score = 1.0 - (clamped_c / 5.0)
+
+    return round((0.5 * density_score) + (0.5 * complexity_score), 4)
+
+
+# ---------------------------------------------------------------------------
 # Confidence scoring + label generation
 # ---------------------------------------------------------------------------
-def compute_confidence(llm_score, stylo_score):
+def compute_confidence(llm_score, stylo_score, punct_score):
     """
-    Combines signals using 70/30 weighting.
-    LLM score weighted higher — captures semantic meaning better.
+    Combines 3 signals using 60/25/15 weighting.
+    LLM dominates (semantic meaning), stylometrics second (structure),
+    punctuation/complexity third (stylistic fingerprint).
     """
-    return round((0.7 * llm_score) + (0.3 * stylo_score), 4)
+    return round((0.60 * llm_score) + (0.25 * stylo_score) + (0.15 * punct_score), 4)
 
 
 def get_attribution(confidence):
@@ -224,12 +280,13 @@ def submit():
     content_id = str(uuid.uuid4())
     timestamp = datetime.now(timezone.utc).isoformat()
 
-    # Run both signals
+    # Run all 3 signals
     llm_score = classify_with_llm(text)
     stylo_score = compute_stylometric_score(text)
+    punct_score = compute_punctuation_score(text)
 
-    # Combine into confidence score
-    confidence = compute_confidence(llm_score, stylo_score)
+    # Combine into confidence score (60/25/15 weighting)
+    confidence = compute_confidence(llm_score, stylo_score, punct_score)
     attribution = get_attribution(confidence)
     label = generate_label(confidence)
 
@@ -242,6 +299,7 @@ def submit():
         "confidence": confidence,
         "llm_score": round(llm_score, 4),
         "stylo_score": round(stylo_score, 4),
+        "punct_score": round(punct_score, 4),
         "status": "classified",
         "type": "submission",
     }
@@ -253,6 +311,7 @@ def submit():
         "confidence": confidence,
         "llm_score": round(llm_score, 4),
         "stylo_score": round(stylo_score, 4),
+        "punct_score": round(punct_score, 4),
         "label": label,
         "status": "classified",
     })
