@@ -88,12 +88,12 @@ POST /appeal  {content_id, creator_reasoning}
 
 Both signals produce a score between 0.0 and 1.0, where higher = more likely AI.
 
-**Weighting:**
+**Weighting (updated with 3rd signal — see Stretch Features section):**
 ```
-confidence = (0.7 × llm_score) + (0.3 × stylo_score)
+confidence = (0.60 × llm_score) + (0.25 × stylo_score) + (0.15 × punct_score)
 ```
 
-The LLM score is weighted higher because it captures semantic meaning, which is harder to fake. Stylometrics acts as a structural corroboration — it can push borderline cases in one direction but rarely overrides a strong LLM result.
+The LLM score is weighted highest because it captures semantic meaning, which is harder to fake. Stylometrics acts as structural corroboration. Punctuation/complexity adds an independent stylistic fingerprint. Original two-signal weighting was 70/30 before ensemble detection was added.
 
 **Thresholds:**
 
