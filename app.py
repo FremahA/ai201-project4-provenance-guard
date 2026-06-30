@@ -367,6 +367,135 @@ def get_log():
     return jsonify({"entries": list(reversed(entries[-50:]))})
 
 
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
+    entries = load_log()
+
+    submissions = [e for e in entries if e.get("type") == "submission"]
+    appeals = [e for e in entries if e.get("type") == "appeal"]
+
+    total = len(submissions)
+    appeal_count = len(appeals)
+    appeal_rate = round((appeal_count / total * 100), 1) if total > 0 else 0
+
+    counts = {"likely_ai": 0, "uncertain": 0, "likely_human": 0}
+    confidence_sums = {"likely_ai": 0.0, "uncertain": 0.0, "likely_human": 0.0}
+
+    for e in submissions:
+        attr = e.get("attribution", "uncertain")
+        if attr in counts:
+            counts[attr] += 1
+            confidence_sums[attr] += e.get("confidence", 0.0)
+
+    def avg_conf(attr):
+        if counts[attr] == 0:
+            return "N/A"
+        return round(confidence_sums[attr] / counts[attr], 3)
+
+    def pct(n):
+        return round(n / total * 100, 1) if total > 0 else 0
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provenance Guard — Analytics Dashboard</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f5f5f5; color: #222; margin: 0; padding: 2rem; }}
+    h1 {{ font-size: 1.5rem; margin-bottom: 0.25rem; }}
+    p.sub {{ color: #666; margin-top: 0; margin-bottom: 2rem; font-size: 0.9rem; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+             gap: 1rem; margin-bottom: 2rem; }}
+    .card {{ background: white; border-radius: 8px; padding: 1.25rem 1.5rem;
+             box-shadow: 0 1px 3px rgba(0,0,0,0.08); }}
+    .card .label {{ font-size: 0.8rem; text-transform: uppercase; color: #888;
+                    letter-spacing: 0.05em; margin-bottom: 0.4rem; }}
+    .card .value {{ font-size: 2rem; font-weight: 700; }}
+    .card .value.ai {{ color: #c0392b; }}
+    .card .value.uncertain {{ color: #e67e22; }}
+    .card .value.human {{ color: #27ae60; }}
+    table {{ width: 100%; border-collapse: collapse; background: white;
+             border-radius: 8px; overflow: hidden;
+             box-shadow: 0 1px 3px rgba(0,0,0,0.08); }}
+    th {{ background: #333; color: white; text-align: left;
+          padding: 0.75rem 1rem; font-size: 0.85rem; }}
+    td {{ padding: 0.75rem 1rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }}
+    tr:last-child td {{ border-bottom: none; }}
+    .refresh {{ float: right; font-size: 0.8rem; color: #999; margin-top: 0.25rem; }}
+  </style>
+</head>
+<body>
+  <h1>Provenance Guard — Analytics Dashboard</h1>
+  <p class="sub">Live view from audit log &nbsp;·&nbsp;
+     <span class="refresh">Auto-refresh: reload page for latest data</span></p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">Total Submissions</div>
+      <div class="value">{total}</div>
+    </div>
+    <div class="card">
+      <div class="label">Flagged as AI</div>
+      <div class="value ai">{counts['likely_ai']} <small style="font-size:1rem;color:#999">({pct(counts['likely_ai'])}%)</small></div>
+    </div>
+    <div class="card">
+      <div class="label">Uncertain</div>
+      <div class="value uncertain">{counts['uncertain']} <small style="font-size:1rem;color:#999">({pct(counts['uncertain'])}%)</small></div>
+    </div>
+    <div class="card">
+      <div class="label">Likely Human</div>
+      <div class="value human">{counts['likely_human']} <small style="font-size:1rem;color:#999">({pct(counts['likely_human'])}%)</small></div>
+    </div>
+    <div class="card">
+      <div class="label">Appeal Rate</div>
+      <div class="value">{appeal_rate}%</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Attribution Category</th>
+        <th>Count</th>
+        <th>% of Submissions</th>
+        <th>Avg Confidence Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Likely AI</td>
+        <td>{counts['likely_ai']}</td>
+        <td>{pct(counts['likely_ai'])}%</td>
+        <td>{avg_conf('likely_ai')}</td>
+      </tr>
+      <tr>
+        <td>Uncertain</td>
+        <td>{counts['uncertain']}</td>
+        <td>{pct(counts['uncertain'])}%</td>
+        <td>{avg_conf('uncertain')}</td>
+      </tr>
+      <tr>
+        <td>Likely Human</td>
+        <td>{counts['likely_human']}</td>
+        <td>{pct(counts['likely_human'])}%</td>
+        <td>{avg_conf('likely_human')}</td>
+      </tr>
+      <tr style="font-weight:600; background:#fafafa;">
+        <td>Total / Appeals</td>
+        <td>{total}</td>
+        <td>—</td>
+        <td>{appeal_count} appeal(s) filed ({appeal_rate}%)</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>"""
+
+    return html
+
+
 # ---------------------------------------------------------------------------
 # Run
 # ---------------------------------------------------------------------------
