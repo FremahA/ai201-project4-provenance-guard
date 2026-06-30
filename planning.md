@@ -175,6 +175,41 @@ A poem that intentionally repeats phrases and uses simple vocabulary (common in 
 
 ---
 
+## Stretch Features
+
+### Stretch 1: Ensemble Detection (3rd Signal — Punctuation & Complexity Score)
+
+**What it measures:** Two additional structural properties:
+1. **Punctuation density** — punctuation marks per word. Human writing tends to use more varied punctuation (em-dashes, ellipses, exclamation marks mid-sentence). AI text is punctuated more uniformly and conservatively.
+2. **Average sentence complexity** — average number of clauses per sentence (approximated by counting conjunctions and commas per sentence). AI text tends toward longer, multi-clause sentences with consistent complexity; human writing varies more.
+
+**Output:** A `punct_score` from 0.0–1.0 (higher = more likely AI).
+
+**Updated weighting with 3 signals:**
+```
+confidence = (0.60 × llm_score) + (0.25 × stylo_score) + (0.15 × punct_score)
+```
+LLM still dominates. Stylometric score remains the second strongest signal. Punctuation/complexity acts as a tiebreaker for borderline cases. Total weights sum to 1.0.
+
+**Why this signal adds value:** It's independent from both TTR/variance (which measure vocabulary and rhythm) and the LLM (which measures semantic coherence). Punctuation patterns are a genuine stylistic fingerprint that neither of the other two signals captures.
+
+**What it misses:** Non-native English speakers may use punctuation more sparingly. Minimalist prose styles (Hemingway-like) use few punctuation marks by design and may score as AI-like.
+
+---
+
+### Stretch 2: Analytics Dashboard
+
+**What it shows:** A browser-accessible HTML page served by Flask at `GET /dashboard` that reads the live audit log and displays:
+1. **Detection patterns** — breakdown of total submissions by attribution category (likely_ai / uncertain / likely_human), shown as counts and percentages
+2. **Appeal rate** — number of appeals as a percentage of total submissions
+3. **Average confidence by category** — mean confidence score for each attribution bucket (shows whether the system is making decisive calls or hovering near thresholds)
+
+**Implementation:** Single-file HTML page returned by a Flask route. Reads `audit_log.json` on each request and computes stats server-side before rendering. No JavaScript framework needed — plain HTML table and inline stats.
+
+**Why these metrics:** Detection patterns reveal whether the system is biased toward one label. Appeal rate is a proxy for false positive rate (creators only appeal when they believe they were wrongly flagged). Average confidence by category shows whether scores are well-calibrated or clustered near thresholds.
+
+---
+
 ## AI Tool Plan
 
 ### Milestone 3: Submission Endpoint + Signal 1
