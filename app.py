@@ -264,6 +264,115 @@ def generate_label(confidence):
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+@app.route("/", methods=["GET"])
+def index():
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provenance Guard</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+           background: #f5f5f5; color: #222; margin: 0; padding: 2rem; max-width: 700px; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    p.sub { color: #666; margin-top: 0; margin-bottom: 2rem; font-size: 0.9rem; }
+    label { display: block; font-size: 0.85rem; font-weight: 600;
+            margin-bottom: 0.4rem; margin-top: 1rem; }
+    input, textarea { width: 100%; box-sizing: border-box; padding: 0.6rem 0.75rem;
+                      border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem;
+                      font-family: inherit; }
+    textarea { height: 120px; resize: vertical; }
+    button { margin-top: 1rem; background: #333; color: white; border: none;
+             padding: 0.65rem 1.5rem; border-radius: 6px; font-size: 0.95rem;
+             cursor: pointer; }
+    button:hover { background: #555; }
+    pre { background: white; border-radius: 8px; padding: 1rem;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.08); white-space: pre-wrap;
+          word-break: break-word; font-size: 0.85rem; }
+    hr { border: none; border-top: 1px solid #ddd; margin: 2.5rem 0; }
+    a { color: #333; font-size: 0.85rem; }
+    .nav { margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Provenance Guard</h1>
+  <p class="sub">AI content attribution API &nbsp;·&nbsp;
+    <a href="/dashboard">Analytics Dashboard</a> &nbsp;·&nbsp;
+    <a href="/log">Audit Log (JSON)</a></p>
+
+  <h2 style="font-size:1.1rem;">Submit Content</h2>
+  <form id="submitForm">
+    <label>Creator ID</label>
+    <input type="text" id="creatorId" placeholder="e.g. user-123" value="test-user" />
+    <label>Text to Analyze</label>
+    <textarea id="textInput" placeholder="Paste a poem, story excerpt, or blog post here..."></textarea>
+    <button type="submit">Analyze</button>
+  </form>
+  <pre id="submitResult" style="display:none;"></pre>
+
+  <hr>
+
+  <h2 style="font-size:1.1rem;">Submit an Appeal</h2>
+  <form id="appealForm">
+    <label>Content ID (from a previous submission)</label>
+    <input type="text" id="contentId" placeholder="e.g. 4dbd781c-..." />
+    <label>Your Reasoning</label>
+    <textarea id="reasoning" placeholder="Explain why you believe this was misclassified..."></textarea>
+    <button type="submit">Submit Appeal</button>
+  </form>
+  <pre id="appealResult" style="display:none;"></pre>
+
+  <script>
+    document.getElementById('submitForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const result = document.getElementById('submitResult');
+      result.style.display = 'block';
+      result.textContent = 'Analyzing...';
+      try {
+        const res = await fetch('/submit', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            text: document.getElementById('textInput').value,
+            creator_id: document.getElementById('creatorId').value
+          })
+        });
+        const data = await res.json();
+        result.textContent = JSON.stringify(data, null, 2);
+        if (data.content_id) {
+          document.getElementById('contentId').value = data.content_id;
+        }
+      } catch (err) {
+        result.textContent = 'Error: ' + err.message;
+      }
+    });
+
+    document.getElementById('appealForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const result = document.getElementById('appealResult');
+      result.style.display = 'block';
+      result.textContent = 'Submitting appeal...';
+      try {
+        const res = await fetch('/appeal', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            content_id: document.getElementById('contentId').value,
+            creator_reasoning: document.getElementById('reasoning').value
+          })
+        });
+        const data = await res.json();
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        result.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>"""
+
+
 @app.route("/submit", methods=["POST"])
 @limiter.limit("10 per minute;100 per day")
 def submit():
