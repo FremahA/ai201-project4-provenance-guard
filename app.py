@@ -273,99 +273,291 @@ def index():
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Provenance Guard</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-           background: #f5f5f5; color: #222; margin: 0; padding: 2rem; max-width: 700px; }
-    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-    p.sub { color: #666; margin-top: 0; margin-bottom: 2rem; font-size: 0.9rem; }
-    label { display: block; font-size: 0.85rem; font-weight: 600;
-            margin-bottom: 0.4rem; margin-top: 1rem; }
-    input, textarea { width: 100%; box-sizing: border-box; padding: 0.6rem 0.75rem;
-                      border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem;
-                      font-family: inherit; }
-    textarea { height: 120px; resize: vertical; }
-    button { margin-top: 1rem; background: #333; color: white; border: none;
-             padding: 0.65rem 1.5rem; border-radius: 6px; font-size: 0.95rem;
-             cursor: pointer; }
-    button:hover { background: #555; }
-    pre { background: white; border-radius: 8px; padding: 1rem;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.08); white-space: pre-wrap;
-          word-break: break-word; font-size: 0.85rem; }
-    hr { border: none; border-top: 1px solid #ddd; margin: 2.5rem 0; }
-    a { color: #333; font-size: 0.85rem; }
-    .nav { margin-bottom: 1.5rem; }
+    :root {
+      --teal:    #0e7c7b;
+      --teal-dk: #095c5b;
+      --indigo:  #3730a3;
+      --amber:   #92400e;
+      --rose:    #9f1239;
+      --green:   #166534;
+      --bg:      #f0fdf9;
+      --surface: #ffffff;
+      --border:  #99f6e4;
+      --text:    #1c1917;
+      --muted:   #44403c;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0; padding: 0;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #0e7c7b 0%, #3730a3 100%);
+      color: white;
+      padding: 1.5rem 2rem;
+    }
+    header h1 { margin: 0; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p  { margin: 0.3rem 0 0; font-size: 0.9rem; opacity: 0.85; }
+    nav { margin-top: 0.75rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    nav a {
+      color: white; text-decoration: none;
+      background: rgba(255,255,255,0.18);
+      padding: 0.3rem 0.85rem; border-radius: 20px;
+      font-size: 0.85rem; font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.3);
+      transition: background 0.15s;
+    }
+    nav a:hover, nav a:focus {
+      background: rgba(255,255,255,0.32);
+      outline: 2px solid white; outline-offset: 2px;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+    section {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 2px 8px rgba(14,124,123,0.08);
+      border: 1px solid var(--border);
+    }
+    h2 {
+      margin: 0 0 1.25rem;
+      font-size: 1.1rem;
+      color: var(--indigo);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    h2 .icon { font-size: 1.2rem; }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      margin-top: 1rem;
+    }
+    label:first-of-type { margin-top: 0; }
+    input, textarea {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 2px solid #d1fae5;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #f0fdf4;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(14,124,123,0.2);
+      background: white;
+    }
+    textarea { height: 130px; resize: vertical; }
+    button[type="submit"] {
+      margin-top: 1.1rem;
+      background: linear-gradient(135deg, var(--teal) 0%, var(--indigo) 100%);
+      color: white;
+      border: none;
+      padding: 0.7rem 1.75rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, box-shadow 0.15s;
+      letter-spacing: 0.01em;
+    }
+    button[type="submit"]:hover { opacity: 0.9; box-shadow: 0 4px 12px rgba(14,124,123,0.3); }
+    button[type="submit"]:focus {
+      outline: 3px solid var(--teal); outline-offset: 3px;
+    }
+    .result-box {
+      display: none;
+      margin-top: 1.25rem;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid #d1fae5;
+    }
+    .result-banner {
+      padding: 0.65rem 1rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+    }
+    .result-banner.likely_ai    { background: #fee2e2; color: var(--rose);  border-bottom: 2px solid #fca5a5; }
+    .result-banner.uncertain     { background: #fef3c7; color: var(--amber); border-bottom: 2px solid #fcd34d; }
+    .result-banner.likely_human  { background: #dcfce7; color: var(--green); border-bottom: 2px solid #86efac; }
+    .result-banner.neutral       { background: #e0e7ff; color: var(--indigo); border-bottom: 2px solid #a5b4fc; }
+    .result-label {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+      font-style: italic;
+      color: var(--muted);
+    }
+    pre.result-json {
+      margin: 0;
+      padding: 1rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.82rem;
+      background: #f8fafc;
+      color: #334155;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
   </style>
 </head>
 <body>
-  <h1>Provenance Guard</h1>
-  <p class="sub">AI content attribution API &nbsp;·&nbsp;
-    <a href="/dashboard">Analytics Dashboard</a> &nbsp;·&nbsp;
-    <a href="/log">Audit Log (JSON)</a></p>
+  <header>
+    <h1>🛡️ Provenance Guard</h1>
+    <p>AI content attribution — helping platforms build trust with creators</p>
+    <nav aria-label="Site navigation">
+      <a href="/dashboard">📊 Analytics Dashboard</a>
+      <a href="/log">📋 Audit Log</a>
+    </nav>
+  </header>
 
-  <h2 style="font-size:1.1rem;">Submit Content</h2>
-  <form id="submitForm">
-    <label>Creator ID</label>
-    <input type="text" id="creatorId" placeholder="e.g. user-123" value="test-user" />
-    <label>Text to Analyze</label>
-    <textarea id="textInput" placeholder="Paste a poem, story excerpt, or blog post here..."></textarea>
-    <button type="submit">Analyze</button>
-  </form>
-  <pre id="submitResult" style="display:none;"></pre>
+  <main>
+    <section aria-labelledby="submit-heading">
+      <h2 id="submit-heading"><span class="icon" aria-hidden="true">✍️</span> Submit Content for Analysis</h2>
 
-  <hr>
+      <form id="submitForm" novalidate>
+        <label for="creatorId">Creator ID</label>
+        <input type="text" id="creatorId" name="creatorId"
+               placeholder="e.g. user-123" value="test-user"
+               aria-required="true" autocomplete="off" />
 
-  <h2 style="font-size:1.1rem;">Submit an Appeal</h2>
-  <form id="appealForm">
-    <label>Content ID (from a previous submission)</label>
-    <input type="text" id="contentId" placeholder="e.g. 4dbd781c-..." />
-    <label>Your Reasoning</label>
-    <textarea id="reasoning" placeholder="Explain why you believe this was misclassified..."></textarea>
-    <button type="submit">Submit Appeal</button>
-  </form>
-  <pre id="appealResult" style="display:none;"></pre>
+        <label for="textInput">Text to Analyze</label>
+        <textarea id="textInput" name="textInput"
+                  placeholder="Paste a poem, short story excerpt, or blog post here..."
+                  aria-required="true"
+                  aria-describedby="textHint"></textarea>
+        <p id="textHint" style="font-size:0.8rem;color:#6b7280;margin:0.3rem 0 0;">
+          Longer texts (100+ words) produce more reliable results.
+        </p>
+
+        <button type="submit">Analyze Content</button>
+      </form>
+
+      <div class="result-box" id="submitResultBox" role="region" aria-live="polite" aria-label="Analysis result">
+        <div class="result-banner" id="submitBanner"></div>
+        <div class="result-label" id="submitLabel"></div>
+        <pre class="result-json" id="submitJSON"></pre>
+      </div>
+    </section>
+
+    <section aria-labelledby="appeal-heading">
+      <h2 id="appeal-heading"><span class="icon" aria-hidden="true">🙋</span> Submit an Appeal</h2>
+      <p style="font-size:0.9rem;color:var(--muted);margin:0 0 1rem;">
+        If you believe your content was misclassified, you can contest the decision.
+        The content ID is filled automatically after a submission above.
+      </p>
+
+      <form id="appealForm" novalidate>
+        <label for="contentId">Content ID</label>
+        <input type="text" id="contentId" name="contentId"
+               placeholder="e.g. 4dbd781c-6850-455d-9a29-..."
+               aria-required="true" autocomplete="off" />
+
+        <label for="reasoning">Your Reasoning</label>
+        <textarea id="reasoning" name="reasoning"
+                  placeholder="Explain why you believe this content was misclassified..."
+                  aria-required="true"></textarea>
+
+        <button type="submit">Submit Appeal</button>
+      </form>
+
+      <div class="result-box" id="appealResultBox" role="region" aria-live="polite" aria-label="Appeal result">
+        <div class="result-banner neutral" id="appealBanner"></div>
+        <pre class="result-json" id="appealJSON"></pre>
+      </div>
+    </section>
+  </main>
 
   <script>
+    const LABELS = {
+      likely_ai:    '🔴 Likely AI-Generated',
+      uncertain:    '🟡 Uncertain — Could Be Either',
+      likely_human: '🟢 Likely Human-Written',
+    };
+
     document.getElementById('submitForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const result = document.getElementById('submitResult');
-      result.style.display = 'block';
-      result.textContent = 'Analyzing...';
+      const box    = document.getElementById('submitResultBox');
+      const banner = document.getElementById('submitBanner');
+      const lbl    = document.getElementById('submitLabel');
+      const json   = document.getElementById('submitJSON');
+
+      box.style.display = 'block';
+      banner.className = 'result-banner neutral';
+      banner.textContent = '⏳ Analyzing…';
+      lbl.textContent = '';
+      json.textContent = '';
+
       try {
-        const res = await fetch('/submit', {
+        const res  = await fetch('/submit', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
-            text: document.getElementById('textInput').value,
-            creator_id: document.getElementById('creatorId').value
+            text:       document.getElementById('textInput').value,
+            creator_id: document.getElementById('creatorId').value,
           })
         });
         const data = await res.json();
-        result.textContent = JSON.stringify(data, null, 2);
+
+        const attr = data.attribution || 'neutral';
+        banner.className = 'result-banner ' + attr;
+        banner.textContent = LABELS[attr] || attr;
+        lbl.textContent = data.label || '';
+        json.textContent = JSON.stringify(data, null, 2);
+
         if (data.content_id) {
           document.getElementById('contentId').value = data.content_id;
         }
       } catch (err) {
-        result.textContent = 'Error: ' + err.message;
+        banner.className = 'result-banner neutral';
+        banner.textContent = '⚠️ Error';
+        json.textContent = err.message;
       }
     });
 
     document.getElementById('appealForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const result = document.getElementById('appealResult');
-      result.style.display = 'block';
-      result.textContent = 'Submitting appeal...';
+      const box    = document.getElementById('appealResultBox');
+      const banner = document.getElementById('appealBanner');
+      const json   = document.getElementById('appealJSON');
+
+      box.style.display = 'block';
+      banner.textContent = '⏳ Submitting appeal…';
+      json.textContent = '';
+
       try {
-        const res = await fetch('/appeal', {
+        const res  = await fetch('/appeal', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
-            content_id: document.getElementById('contentId').value,
-            creator_reasoning: document.getElementById('reasoning').value
+            content_id:        document.getElementById('contentId').value,
+            creator_reasoning: document.getElementById('reasoning').value,
           })
         });
         const data = await res.json();
-        result.textContent = JSON.stringify(data, null, 2);
+        banner.textContent = data.status === 'under_review'
+          ? '✅ Appeal received — status: under review'
+          : '⚠️ ' + (data.error || 'Unexpected response');
+        json.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
-        result.textContent = 'Error: ' + err.message;
+        banner.textContent = '⚠️ Error';
+        json.textContent = err.message;
       }
     });
   </script>
@@ -511,94 +703,194 @@ def dashboard():
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Provenance Guard — Analytics Dashboard</title>
   <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #f5f5f5; color: #222; margin: 0; padding: 2rem; }}
-    h1 {{ font-size: 1.5rem; margin-bottom: 0.25rem; }}
-    p.sub {{ color: #666; margin-top: 0; margin-bottom: 2rem; font-size: 0.9rem; }}
-    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-             gap: 1rem; margin-bottom: 2rem; }}
-    .card {{ background: white; border-radius: 8px; padding: 1.25rem 1.5rem;
-             box-shadow: 0 1px 3px rgba(0,0,0,0.08); }}
-    .card .label {{ font-size: 0.8rem; text-transform: uppercase; color: #888;
-                    letter-spacing: 0.05em; margin-bottom: 0.4rem; }}
-    .card .value {{ font-size: 2rem; font-weight: 700; }}
-    .card .value.ai {{ color: #c0392b; }}
-    .card .value.uncertain {{ color: #e67e22; }}
-    .card .value.human {{ color: #27ae60; }}
-    table {{ width: 100%; border-collapse: collapse; background: white;
-             border-radius: 8px; overflow: hidden;
-             box-shadow: 0 1px 3px rgba(0,0,0,0.08); }}
-    th {{ background: #333; color: white; text-align: left;
-          padding: 0.75rem 1rem; font-size: 0.85rem; }}
-    td {{ padding: 0.75rem 1rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }}
+    :root {{
+      --teal:   #0e7c7b; --teal-dk: #095c5b;
+      --indigo: #3730a3;
+      --rose:   #9f1239; --rose-bg: #fee2e2;
+      --amber:  #92400e; --amber-bg: #fef3c7;
+      --green:  #166534; --green-bg: #dcfce7;
+      --blue:   #1e40af; --blue-bg:  #dbeafe;
+      --purple: #5b21b6; --purple-bg:#ede9fe;
+      --bg:     #f0fdf9; --surface: #ffffff;
+      --border: #99f6e4; --text: #1c1917; --muted: #44403c;
+    }}
+    *, *::before, *::after {{ box-sizing: border-box; }}
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--text);
+      margin: 0; padding: 0; min-height: 100vh;
+    }}
+    header {{
+      background: linear-gradient(135deg, #0e7c7b 0%, #3730a3 100%);
+      color: white; padding: 1.5rem 2rem;
+    }}
+    header h1 {{ margin: 0; font-size: 1.6rem; }}
+    header p  {{ margin: 0.3rem 0 0; font-size: 0.9rem; opacity: 0.85; }}
+    nav {{ margin-top: 0.75rem; display: flex; gap: 1rem; flex-wrap: wrap; }}
+    nav a {{
+      color: white; text-decoration: none;
+      background: rgba(255,255,255,0.18);
+      padding: 0.3rem 0.85rem; border-radius: 20px;
+      font-size: 0.85rem; font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.3);
+    }}
+    nav a:hover, nav a:focus {{
+      background: rgba(255,255,255,0.32);
+      outline: 2px solid white; outline-offset: 2px;
+    }}
+    main {{ max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }}
+    h2 {{ font-size: 1rem; color: var(--indigo); margin: 0 0 1.25rem;
+          text-transform: uppercase; letter-spacing: 0.06em; }}
+    .grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }}
+    .card {{
+      background: var(--surface); border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 2px 8px rgba(14,124,123,0.08);
+      border: 1px solid var(--border);
+    }}
+    .card .clabel {{
+      font-size: 0.75rem; text-transform: uppercase;
+      letter-spacing: 0.06em; font-weight: 600;
+      margin-bottom: 0.5rem;
+    }}
+    .card .cvalue {{ font-size: 2.2rem; font-weight: 800; line-height: 1; }}
+    .card .cpct   {{ font-size: 0.85rem; font-weight: 500; margin-top: 0.2rem; }}
+    .card.total   {{ border-top: 4px solid var(--teal);   }}
+    .card.ai      {{ border-top: 4px solid #f87171;
+                     background: var(--rose-bg); }}
+    .card.ai      .clabel {{ color: var(--rose); }}
+    .card.ai      .cvalue {{ color: var(--rose); }}
+    .card.uncertain {{ border-top: 4px solid #fbbf24;
+                       background: var(--amber-bg); }}
+    .card.uncertain .clabel {{ color: var(--amber); }}
+    .card.uncertain .cvalue {{ color: var(--amber); }}
+    .card.human   {{ border-top: 4px solid #4ade80;
+                     background: var(--green-bg); }}
+    .card.human   .clabel {{ color: var(--green); }}
+    .card.human   .cvalue {{ color: var(--green); }}
+    .card.appeals {{ border-top: 4px solid #818cf8;
+                     background: var(--purple-bg); }}
+    .card.appeals .clabel {{ color: var(--purple); }}
+    .card.appeals .cvalue {{ color: var(--purple); }}
+    table {{
+      width: 100%; border-collapse: collapse;
+      background: var(--surface); border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(14,124,123,0.08);
+      border: 1px solid var(--border);
+    }}
+    thead tr {{ background: linear-gradient(135deg, #0e7c7b, #3730a3); }}
+    th {{
+      color: white; text-align: left;
+      padding: 0.85rem 1.1rem; font-size: 0.82rem;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }}
+    td {{ padding: 0.85rem 1.1rem; border-bottom: 1px solid #e0fdf4; font-size: 0.9rem; }}
     tr:last-child td {{ border-bottom: none; }}
-    .refresh {{ float: right; font-size: 0.8rem; color: #999; margin-top: 0.25rem; }}
+    tbody tr:hover {{ background: #f0fdf9; }}
+    .badge {{
+      display: inline-block; padding: 0.2rem 0.65rem;
+      border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+    }}
+    .badge.ai       {{ background: var(--rose-bg);   color: var(--rose);   }}
+    .badge.uncertain{{ background: var(--amber-bg);  color: var(--amber);  }}
+    .badge.human    {{ background: var(--green-bg);  color: var(--green);  }}
+    .badge.appeals  {{ background: var(--purple-bg); color: var(--purple); }}
+    .section-wrap {{
+      background: var(--surface); border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(14,124,123,0.08);
+      border: 1px solid var(--border);
+    }}
   </style>
 </head>
 <body>
-  <h1>Provenance Guard — Analytics Dashboard</h1>
-  <p class="sub">Live view from audit log &nbsp;·&nbsp;
-     <span class="refresh">Auto-refresh: reload page for latest data</span></p>
+  <header>
+    <h1>📊 Analytics Dashboard</h1>
+    <p>Live detection patterns — Provenance Guard</p>
+    <nav aria-label="Site navigation">
+      <a href="/">✍️ Submit Content</a>
+      <a href="/log">📋 Audit Log</a>
+    </nav>
+  </header>
 
-  <div class="grid">
-    <div class="card">
-      <div class="label">Total Submissions</div>
-      <div class="value">{total}</div>
-    </div>
-    <div class="card">
-      <div class="label">Flagged as AI</div>
-      <div class="value ai">{counts['likely_ai']} <small style="font-size:1rem;color:#999">({pct(counts['likely_ai'])}%)</small></div>
-    </div>
-    <div class="card">
-      <div class="label">Uncertain</div>
-      <div class="value uncertain">{counts['uncertain']} <small style="font-size:1rem;color:#999">({pct(counts['uncertain'])}%)</small></div>
-    </div>
-    <div class="card">
-      <div class="label">Likely Human</div>
-      <div class="value human">{counts['likely_human']} <small style="font-size:1rem;color:#999">({pct(counts['likely_human'])}%)</small></div>
-    </div>
-    <div class="card">
-      <div class="label">Appeal Rate</div>
-      <div class="value">{appeal_rate}%</div>
-    </div>
-  </div>
+  <main>
+    <section aria-label="Summary statistics">
+      <div class="grid">
+        <div class="card total">
+          <div class="clabel">Total Submissions</div>
+          <div class="cvalue">{total}</div>
+          <div class="cpct" style="color:var(--muted);">all time</div>
+        </div>
+        <div class="card ai" aria-label="Flagged as AI: {counts['likely_ai']} submissions, {pct(counts['likely_ai'])} percent">
+          <div class="clabel">🔴 Flagged as AI</div>
+          <div class="cvalue">{counts['likely_ai']}</div>
+          <div class="cpct">{pct(counts['likely_ai'])}% of total</div>
+        </div>
+        <div class="card uncertain" aria-label="Uncertain: {counts['uncertain']} submissions, {pct(counts['uncertain'])} percent">
+          <div class="clabel">🟡 Uncertain</div>
+          <div class="cvalue">{counts['uncertain']}</div>
+          <div class="cpct">{pct(counts['uncertain'])}% of total</div>
+        </div>
+        <div class="card human" aria-label="Likely human: {counts['likely_human']} submissions, {pct(counts['likely_human'])} percent">
+          <div class="clabel">🟢 Likely Human</div>
+          <div class="cvalue">{counts['likely_human']}</div>
+          <div class="cpct">{pct(counts['likely_human'])}% of total</div>
+        </div>
+        <div class="card appeals" aria-label="Appeal rate: {appeal_rate} percent">
+          <div class="clabel">🙋 Appeal Rate</div>
+          <div class="cvalue">{appeal_rate}%</div>
+          <div class="cpct">{appeal_count} appeal(s) filed</div>
+        </div>
+      </div>
+    </section>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Attribution Category</th>
-        <th>Count</th>
-        <th>% of Submissions</th>
-        <th>Avg Confidence Score</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Likely AI</td>
-        <td>{counts['likely_ai']}</td>
-        <td>{pct(counts['likely_ai'])}%</td>
-        <td>{avg_conf('likely_ai')}</td>
-      </tr>
-      <tr>
-        <td>Uncertain</td>
-        <td>{counts['uncertain']}</td>
-        <td>{pct(counts['uncertain'])}%</td>
-        <td>{avg_conf('uncertain')}</td>
-      </tr>
-      <tr>
-        <td>Likely Human</td>
-        <td>{counts['likely_human']}</td>
-        <td>{pct(counts['likely_human'])}%</td>
-        <td>{avg_conf('likely_human')}</td>
-      </tr>
-      <tr style="font-weight:600; background:#fafafa;">
-        <td>Total / Appeals</td>
-        <td>{total}</td>
-        <td>—</td>
-        <td>{appeal_count} appeal(s) filed ({appeal_rate}%)</td>
-      </tr>
-    </tbody>
-  </table>
+    <section aria-label="Detailed breakdown" style="margin-top:1.5rem;">
+      <div class="section-wrap">
+        <h2>Detection Breakdown</h2>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Attribution</th>
+              <th scope="col">Count</th>
+              <th scope="col">% of Submissions</th>
+              <th scope="col">Avg Confidence Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge ai">Likely AI</span></td>
+              <td>{counts['likely_ai']}</td>
+              <td>{pct(counts['likely_ai'])}%</td>
+              <td>{avg_conf('likely_ai')}</td>
+            </tr>
+            <tr>
+              <td><span class="badge uncertain">Uncertain</span></td>
+              <td>{counts['uncertain']}</td>
+              <td>{pct(counts['uncertain'])}%</td>
+              <td>{avg_conf('uncertain')}</td>
+            </tr>
+            <tr>
+              <td><span class="badge human">Likely Human</span></td>
+              <td>{counts['likely_human']}</td>
+              <td>{pct(counts['likely_human'])}%</td>
+              <td>{avg_conf('likely_human')}</td>
+            </tr>
+            <tr>
+              <td><span class="badge appeals">Appeals</span></td>
+              <td>{appeal_count}</td>
+              <td>{appeal_rate}%</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 </body>
 </html>"""
 
